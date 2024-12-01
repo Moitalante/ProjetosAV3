@@ -1,6 +1,0 @@
-flask
-sqlalchemy
-requests
-waitress
-gunicorn
-pymysql
