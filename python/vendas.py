@@ -94,7 +94,7 @@ def registrar_venda():
         # Buscar o produto no servidor de produtos no Railway
         url = f"https://seu-nome.railway.app/produtos/{id_produto}"
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url)
         if response.status_code != 200:
             return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
 
