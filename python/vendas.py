@@ -95,6 +95,10 @@ def registrar_venda():
         url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
 
         response = requests.get(url)
+        response = requests.get(url)
+        print(f"URL chamada: {url}")
+        print(f"Status code: {response.status_code}")
+        print(f"Resposta: {response.text}")
         if response.status_code != 200:
             return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
 
