@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from waitress import serve
 
 # Configuração do banco de dados para vendas no Railway
-DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
+DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@mysql.railway.internal:42540/railway"
 engine_vendas = create_engine(DATABASE_URL_VENDAS, echo=True)
 SessionLocalVendas = sessionmaker(bind=engine_vendas)
 
@@ -92,7 +92,7 @@ def registrar_venda():
             return jsonify({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}), 400
 
         # Buscar o produto no servidor de produtos no Railway
-        url = f"https://av3-projetos-production.up.railway.app/produtos/2"
+        url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
 
         response = requests.get(url)
         if response.status_code != 200:
