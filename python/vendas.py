@@ -138,57 +138,5 @@ def registrar_venda():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Rota para buscar produto
-@app.route("/buscar_produto", methods=["GET"])
-def buscar_produto():
-    try:
-        id_produto = request.args.get("id_produto")
-        if not id_produto:
-            return jsonify({"error": "ID do produto é necessário"}), 400
-
-        # Buscar o produto no servidor de produtos no Railway
-        url = f"https://av3-projetos-production.up.railway.app/produtos{id_produto}"
-
-        response = requests.get(url)
-        if response.status_code == 200:
-            produto = response.json()
-            return jsonify(produto)
-        else:
-            return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# Rota para atualizar produto
-@app.route("/atualizar_produto", methods=["POST", "PUT"])
-def atualizar_produto():
-    url = f"https://seu-nome.railway.app/produtos/1"  # Exemplo de URL para atualizar um produto
-
-    try:
-        dados = request.get_json()
-        if not dados:
-            return jsonify({"error": "Dados inválidos ou não enviados"}), 400
-
-        # Envia os dados para o servidor Node.js
-        if request.method == "POST":
-            # Se for um POST, enviar para adicionar um produto
-            response = requests.post(url, json=dados)
-        else:
-            # Se for um PUT, enviar para atualizar um produto
-            product_id = dados.get("id")
-            if not product_id:
-                return jsonify({"error": "ID do produto é necessário para atualizar"}), 400
-            response = requests.put(f"{url}/{product_id}", json=dados)
-
-        if response.status_code == 200 or response.status_code == 201:
-            return jsonify({"message": "Produto processado com sucesso", "data": response.json()}), response.status_code
-        else:
-            return jsonify({"error": "Erro ao processar o produto", "details": response.json()}), response.status_code
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 port = int(os.environ.get("PORT", 5000))
 serve(app, host="0.0.0.0", port=port)
