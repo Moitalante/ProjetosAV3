@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from waitress import serve
+import os
 
 # Configuração do banco de dados para vendas no Railway
 DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
@@ -189,5 +190,5 @@ def atualizar_produto():
         return jsonify({"error": str(e)}), 500
 
 
-if __name__ == "__main__":
-    serve(app, host="0.0.0.0", port=5002)
+port = int(os.environ.get("PORT", 42540))
+serve(app, host="0.0.0.0", port=port)
