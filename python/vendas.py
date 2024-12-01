@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from waitress import serve
 
 # Configuração do banco de dados
-DATABASE_URL = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@mysql.railway.internal:3306/railway"
+DATABASE_URL = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 
