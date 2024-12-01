@@ -64,7 +64,7 @@ def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descrica
     }
 
     try:
-        response = requests.put(url, json=dados_atualizados)
+        response = requests.put(url, json=dados_atualizados, timeout=30)
         if response.status_code == 200:
             return True
         else:
