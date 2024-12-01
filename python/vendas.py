@@ -6,10 +6,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from waitress import serve
 
-# Configuração do banco de dados
-DATABASE_URL = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(bind=engine)
+# Configuração do banco de dados para vendas no Railway
+DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
+engine_vendas = create_engine(DATABASE_URL_VENDAS, echo=True)
+SessionLocalVendas = sessionmaker(bind=engine_vendas)
 
 Base = declarative_base()
 
@@ -23,11 +23,22 @@ class Venda(Base):
     quantidade = Column(Integer, nullable=False)
     preco = Column(DECIMAL(10, 2), nullable=False)
 
-Base.metadata.create_all(engine)
+Base.metadata.create_all(engine_vendas)
 
-# Registrar venda no banco local
+# Configuração do banco de dados para produtos no Railway
+DATABASE_URL_PRODUTOS = "mysql+pymysql://<username>:<password>@<hostname>:<port>/<database>"
+# Substitua <username>, <password>, <hostname>, <port> e <database> com as credenciais do banco de dados de produtos no Railway.
+engine_produtos = create_engine(DATABASE_URL_PRODUTOS, echo=True)
+SessionLocalProdutos = sessionmaker(bind=engine_produtos)
+
+# Cabeçalhos de autenticação (se necessário)
+#headers = {
+#   "Authorization": "Bearer <seu_token_aqui>"  # Substitua com seu token de autenticação, se necessário
+#}
+
+# Registrar venda no banco de dados de vendas
 def registrar_venda_no_banco(nome_func, veiculo_vendido, quantidade, preco):
-    session = SessionLocal()
+    session = SessionLocalVendas()
     try:
         venda = Venda(nome_func=nome_func, veiculo_vendido=veiculo_vendido, quantidade=quantidade, preco=preco)
         session.add(venda)
@@ -40,12 +51,10 @@ def registrar_venda_no_banco(nome_func, veiculo_vendido, quantidade, preco):
     finally:
         session.close()
 
-# Atualizar o estoque no outro banco
+# Atualizar o estoque no banco de dados de produtos no Railway
 def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descricao, preco):
-    # URL do servidor Node.js para atualizar o produto
-    url = f"http://localhost:3300/produtos/{id_produto}"
+    url = f"https://seu-nome.railway.app/produtos/{id_produto}"  # Substitua pelo URL do seu serviço no Railway
 
-    # Dados para enviar ao servidor
     dados_atualizados = {
         "nome": nome,
         "descricao": descricao,
@@ -54,18 +63,17 @@ def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descrica
     }
 
     try:
-        # Fazendo a requisição PUT para atualizar o produto
-        response = requests.put(url, json=dados_atualizados)
+        response = requests.put(url, json=dados_atualizados, headers=headers)
         if response.status_code == 200:
             return True
         else:
-            print(f"Erro ao atualizar o estoque: {response.json()}")
+            print(f"Erro ao atualizar o estoque: {response.status_code} - {response.json()}")
             return False
     except Exception as e:
         print(f"Erro ao conectar ao servidor Node.js: {e}")
         return False
 
-# Rota para buscar produto e registrar venda
+# Rota para registrar venda e atualizar estoque
 app = Flask(__name__)
 
 @app.route("/registrar_venda", methods=["POST"])
@@ -83,11 +91,10 @@ def registrar_venda():
         if not nome_func or not id_produto or not quantidade_desejada:
             return jsonify({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}), 400
 
-        # URL para buscar o produto
-        url = f"http://localhost:3300/produtos/{id_produto}"
+        # Buscar o produto no servidor de produtos no Railway
+        url = f"https://seu-nome.railway.app/produtos/{id_produto}"
 
-        # Buscar o produto
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         if response.status_code != 200:
             return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
 
@@ -107,12 +114,12 @@ def registrar_venda():
         # Atualizar o estoque no outro banco
         nova_quantidade = quantidade_atual - quantidade_desejada
         estoque_atualizado = atualizar_estoque_no_outro_banco(
-           id_produto, nova_quantidade, nome_produto, descricao, preco
+            id_produto, nova_quantidade, nome_produto, descricao, preco
         )
         if not estoque_atualizado:
             return jsonify({"error": "Erro ao atualizar o estoque no outro banco"}), 500
 
-        # Registrar a venda no banco local
+        # Registrar a venda no banco de vendas
         venda_id = registrar_venda_no_banco(nome_func, nome_produto, quantidade_desejada, preco)
 
         # Retornar sucesso
@@ -131,59 +138,31 @@ def registrar_venda():
         return jsonify({"error": str(e)}), 500
 
 
-
-   
-
+# Rota para buscar produto
 @app.route("/buscar_produto", methods=["GET"])
 def buscar_produto():
-    # A URL do seu servidor Node.js
-
-
-
-            #utilizando GET
-    #/produtos --- retorna todos os produtos
-    #/produtos/id --- retorna o produto com base no id
-
-            #Utilizando POST
-    #/produtos      (nome,descricao,quantidade,preco)
-
-            #Utilizando PUT
-    #/produtos/id   (nome,descricao,quantidade,preco)
-
-            #Utilizando DELETE
-    #/produtos/id
-
-
-    # colunas = nome, descricao, quantidade, preco
-
-
-
-
-    url = "http://localhost:3300/produtos/7"  # Ou outra URL que você deseja buscar
-
     try:
-        # Fazendo a requisição GET para buscar os dados do produto
-        response = requests.get(url)
+        id_produto = request.args.get("id_produto")
+        if not id_produto:
+            return jsonify({"error": "ID do produto é necessário"}), 400
+
+        # Buscar o produto no servidor de produtos no Railway
+        url = f"https://seu-nome.railway.app/produtos/{id_produto}"
+
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            # Se a requisição for bem-sucedida, retorna o produto em JSON
             produto = response.json()
-            print(produto)
             return jsonify(produto)
         else:
             return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
     except Exception as e:
-        # Caso ocorra algum erro ao fazer a requisição
         return jsonify({"error": str(e)}), 500
-    
 
 
-
-
-
-# Rota para enviar dados ao servidor Node.js (POST ou PUT)
+# Rota para atualizar produto
 @app.route("/atualizar_produto", methods=["POST", "PUT"])
 def atualizar_produto():
-    url = "http://localhost:3300/produtos/1"  # URL do seu servidor Node.js
+    url = f"https://seu-nome.railway.app/produtos/1"  # Exemplo de URL para atualizar um produto
 
     try:
         dados = request.get_json()
@@ -193,13 +172,13 @@ def atualizar_produto():
         # Envia os dados para o servidor Node.js
         if request.method == "POST":
             # Se for um POST, enviar para adicionar um produto
-            response = requests.post(url, json=dados)
+            response = requests.post(url, json=dados, headers=headers)
         else:
             # Se for um PUT, enviar para atualizar um produto
             product_id = dados.get("id")
             if not product_id:
                 return jsonify({"error": "ID do produto é necessário para atualizar"}), 400
-            response = requests.put(f"{url}/{product_id}", json=dados)
+            response = requests.put(f"{url}/{product_id}", json=dados, headers=headers)
 
         if response.status_code == 200 or response.status_code == 201:
             return jsonify({"message": "Produto processado com sucesso", "data": response.json()}), response.status_code
@@ -208,12 +187,6 @@ def atualizar_produto():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
