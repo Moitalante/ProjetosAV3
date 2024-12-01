@@ -190,5 +190,5 @@ def atualizar_produto():
         return jsonify({"error": str(e)}), 500
 
 
-port = int(os.environ.get("PORT", 42540))
+port = int(os.environ.get("PORT", 5000))
 serve(app, host="0.0.0.0", port=port)
