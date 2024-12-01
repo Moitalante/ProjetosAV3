@@ -27,7 +27,7 @@ class Venda(Base):
 Base.metadata.create_all(engine_vendas)
 
 # Configuração do banco de dados para produtos no Railway
-DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@junction.proxy.rlwy.net:53494/railway"
+DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@mysql-jww1.railway.internal:53494/railway"
 # Substitua <username>, <password>, <hostname>, <port> e <database> com as credenciais do banco de dados de produtos no Railway.
 engine_produtos = create_engine(DATABASE_URL_PRODUTOS, echo=True)
 SessionLocalProdutos = sessionmaker(bind=engine_produtos)
