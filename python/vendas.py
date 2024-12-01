@@ -92,13 +92,9 @@ def registrar_venda():
             return jsonify({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}), 400
 
         # Buscar o produto no servidor de produtos no Railway
-        url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
+        url = f"https://av3-projetos-production.up.railway.app/produtos/2"
 
         response = requests.get(url)
-        response = requests.get(url)
-        print(f"URL chamada: {url}")
-        print(f"Status code: {response.status_code}")
-        print(f"Resposta: {response.text}")
         if response.status_code != 200:
             return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
 
