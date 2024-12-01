@@ -26,7 +26,7 @@ class Venda(Base):
 Base.metadata.create_all(engine_vendas)
 
 # Configuração do banco de dados para produtos no Railway
-DATABASE_URL_PRODUTOS = "mysql+pymysql://<username>:<password>@<hostname>:<port>/<database>"
+DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@mysql-jww1.railway.internal:3306/railway"
 # Substitua <username>, <password>, <hostname>, <port> e <database> com as credenciais do banco de dados de produtos no Railway.
 engine_produtos = create_engine(DATABASE_URL_PRODUTOS, echo=True)
 SessionLocalProdutos = sessionmaker(bind=engine_produtos)
@@ -53,7 +53,7 @@ def registrar_venda_no_banco(nome_func, veiculo_vendido, quantidade, preco):
 
 # Atualizar o estoque no banco de dados de produtos no Railway
 def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descricao, preco):
-    url = f"https://seu-nome.railway.app/produtos/{id_produto}"  # Substitua pelo URL do seu serviço no Railway
+    url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"  # Substitua pelo URL do seu serviço no Railway
 
     dados_atualizados = {
         "nome": nome,
@@ -63,7 +63,7 @@ def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descrica
     }
 
     try:
-        response = requests.put(url, json=dados_atualizados, headers=headers)
+        response = requests.put(url, json=dados_atualizados)
         if response.status_code == 200:
             return True
         else:
@@ -92,7 +92,7 @@ def registrar_venda():
             return jsonify({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}), 400
 
         # Buscar o produto no servidor de produtos no Railway
-        url = f"https://seu-nome.railway.app/produtos/{id_produto}"
+        url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
 
         response = requests.get(url)
         if response.status_code != 200:
@@ -147,9 +147,9 @@ def buscar_produto():
             return jsonify({"error": "ID do produto é necessário"}), 400
 
         # Buscar o produto no servidor de produtos no Railway
-        url = f"https://seu-nome.railway.app/produtos/{id_produto}"
+        url = f"https://av3-projetos-production.up.railway.app/produtos{id_produto}"
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url)
         if response.status_code == 200:
             produto = response.json()
             return jsonify(produto)
@@ -172,13 +172,13 @@ def atualizar_produto():
         # Envia os dados para o servidor Node.js
         if request.method == "POST":
             # Se for um POST, enviar para adicionar um produto
-            response = requests.post(url, json=dados, headers=headers)
+            response = requests.post(url, json=dados)
         else:
             # Se for um PUT, enviar para atualizar um produto
             product_id = dados.get("id")
             if not product_id:
                 return jsonify({"error": "ID do produto é necessário para atualizar"}), 400
-            response = requests.put(f"{url}/{product_id}", json=dados, headers=headers)
+            response = requests.put(f"{url}/{product_id}", json=dados)
 
         if response.status_code == 200 or response.status_code == 201:
             return jsonify({"message": "Produto processado com sucesso", "data": response.json()}), response.status_code
