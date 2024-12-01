@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from waitress import serve
 
 # Configuração do banco de dados para vendas no Railway
-DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@mysql.railway.internal:42540/railway"
+DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
 engine_vendas = create_engine(DATABASE_URL_VENDAS, echo=True)
 SessionLocalVendas = sessionmaker(bind=engine_vendas)
 
@@ -26,7 +26,7 @@ class Venda(Base):
 Base.metadata.create_all(engine_vendas)
 
 # Configuração do banco de dados para produtos no Railway
-DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@mysql-jww1.railway.internal:53494/railway"
+DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@junction.proxy.rlwy.net:53494/railway"
 # Substitua <username>, <password>, <hostname>, <port> e <database> com as credenciais do banco de dados de produtos no Railway.
 engine_produtos = create_engine(DATABASE_URL_PRODUTOS, echo=True)
 SessionLocalProdutos = sessionmaker(bind=engine_produtos)
