@@ -1,1 +1,1 @@
-web: python -m vendas.app
+web: python python/vendas.py 
