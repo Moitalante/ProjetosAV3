@@ -138,5 +138,5 @@ def registrar_venda():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-port = int(os.environ.get("PORT", 5002))
-serve(app, host="junction.proxy.rlwy.net", port=port)
+if __name__ == "__main__":
+    serve(app, host="junction.proxy.rlwy.net", port=36175)
