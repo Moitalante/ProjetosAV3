@@ -141,8 +141,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps({"error": "Erro ao atualizar o estoque no outro banco"}).encode())
                     return
 
+                # Calcular o preço total da venda
+                preco_total = quantidade_desejada * preco
+                
                 # Registrar a venda no banco de vendas
-                venda_id = registrar_venda_no_banco(nome_func, nome_produto, quantidade_desejada, preco)
+                venda_id = registrar_venda_no_banco(nome_func, nome_produto, quantidade_desejada, preco_total)
 
                 # Retornar sucesso
                 self.send_response(200)
@@ -155,7 +158,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "nome": nome_produto,
                         "descricao": descricao,
                         "quantidade_vendida": quantidade_desejada,
-                        "preco": preco
+                        "preco": preco_total  # Agora retornando o preço total da venda
                     }
                 }).encode())
 
@@ -164,7 +167,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(e)}).encode())
-
 
 # Função para rodar o servidor
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=36175):
