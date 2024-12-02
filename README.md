@@ -19,3 +19,9 @@ hostname: junction.proxy.rlwy.net    port: 36175
 password: NCoLDllvIWKKtnZEzZrwzXohnCNJDguK
 
 projetosav3-production-03de.up.railway.app
+
+{
+  "nome_func":"zz gusta",
+  "id_produto": 3,
+  "quantidade": 2
+}
