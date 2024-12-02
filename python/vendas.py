@@ -4,8 +4,8 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from waitress import serve
-import os
+
+
 
 # Configuração do banco de dados para vendas no Railway
 DATABASE_URL_VENDAS = "mysql+pymysql://root:NCoLDllvIWKKtnZEzZrwzXohnCNJDguK@junction.proxy.rlwy.net:36175/railway"
@@ -139,4 +139,5 @@ def registrar_venda():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    from waitress import serve
     serve(app, host="junction.proxy.rlwy.net", port=36175)
