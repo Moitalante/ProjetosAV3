@@ -8,7 +8,7 @@ from waitress import serve
 import os
 
 # Configuração do banco de dados para vendas no Railway
-DATABASE_URL_VENDAS = "mysql+pymysql://root:MekYvOHqGvOkEyrgvqDNYWYwdgEryzbm@junction.proxy.rlwy.net:42540/railway"
+DATABASE_URL_VENDAS = "mysql+pymysql://root:NCoLDllvIWKKtnZEzZrwzXohnCNJDguK@junction.proxy.rlwy.net:36175/railway"
 engine_vendas = create_engine(DATABASE_URL_VENDAS, echo=True)
 SessionLocalVendas = sessionmaker(bind=engine_vendas)
 
