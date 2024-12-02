@@ -1,11 +1,11 @@
+import json
 import requests
-from flask import Flask, request, jsonify
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlparse
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
-
 
 # Configuração do banco de dados para vendas no Railway
 DATABASE_URL_VENDAS = "mysql+pymysql://root:NCoLDllvIWKKtnZEzZrwzXohnCNJDguK@junction.proxy.rlwy.net:36175/railway"
@@ -28,14 +28,8 @@ Base.metadata.create_all(engine_vendas)
 
 # Configuração do banco de dados para produtos no Railway
 DATABASE_URL_PRODUTOS = "mysql+pymysql://root:XfZUPIHFkatAoUdOXgWWwFPLHkSnACjl@mysql-jww1.railway.internal:53494/railway"
-# Substitua <username>, <password>, <hostname>, <port> e <database> com as credenciais do banco de dados de produtos no Railway.
 engine_produtos = create_engine(DATABASE_URL_PRODUTOS, echo=True)
 SessionLocalProdutos = sessionmaker(bind=engine_produtos)
-
-# Cabeçalhos de autenticação (se necessário)
-#headers = {
-#   "Authorization": "Bearer <seu_token_aqui>"  # Substitua com seu token de autenticação, se necessário
-#}
 
 # Registrar venda no banco de dados de vendas
 def registrar_venda_no_banco(nome_func, veiculo_vendido, quantidade, preco):
@@ -74,70 +68,111 @@ def atualizar_estoque_no_outro_banco(id_produto, nova_quantidade, nome, descrica
         print(f"Erro ao conectar ao servidor Node.js: {e}")
         return False
 
-# Rota para registrar venda e atualizar estoque
-app = Flask(__name__)
 
-@app.route("/registrar_venda", methods=["POST"])
-def registrar_venda():
-    try:
-        # Receber os dados da requisição
-        dados = request.get_json()
-        if not dados:
-            return jsonify({"error": "Dados inválidos ou não enviados"}), 400
+# Classe que lida com as requisições HTTP
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path == "/registrar_venda":
+            try:
+                # Receber dados JSON da requisição
+                content_length = int(self.headers["Content-Length"])
+                post_data = self.rfile.read(content_length)
+                dados = json.loads(post_data.decode("utf-8"))
 
-        nome_func = dados.get("nome_func")
-        id_produto = dados.get("id_produto")
-        quantidade_desejada = dados.get("quantidade")
+                if not dados:
+                    self.send_response(400)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Dados inválidos ou não enviados"}).encode())
+                    return
 
-        if not nome_func or not id_produto or not quantidade_desejada:
-            return jsonify({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}), 400
+                nome_func = dados.get("nome_func")
+                id_produto = dados.get("id_produto")
+                quantidade_desejada = dados.get("quantidade")
 
-        # Buscar o produto no servidor de produtos no Railway
-        url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
+                if not nome_func or not id_produto or not quantidade_desejada:
+                    self.send_response(400)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Campos 'nome_func', 'id_produto' ou 'quantidade' faltando"}).encode())
+                    return
 
-        response = requests.get(url)
-        if response.status_code != 200:
-            return jsonify({"error": "Produto não encontrado ou erro ao buscar o produto"}), response.status_code
+                # Buscar o produto no servidor de produtos no Railway
+                url = f"https://av3-projetos-production.up.railway.app/produtos/{id_produto}"
 
-        produto = response.json()
-        nome_produto = produto.get("nome")
-        descricao = produto.get("descricao")
-        quantidade_atual = produto.get("quantidade")
-        preco = produto.get("preco")
+                response = requests.get(url)
+                if response.status_code != 200:
+                    self.send_response(response.status_code)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Produto não encontrado ou erro ao buscar o produto"}).encode())
+                    return
 
-        if not nome_produto or not descricao or quantidade_atual is None or preco is None:
-            return jsonify({"error": "Dados do produto estão incompletos"}), 400
+                produto = response.json()
+                nome_produto = produto.get("nome")
+                descricao = produto.get("descricao")
+                quantidade_atual = produto.get("quantidade")
+                preco = produto.get("preco")
 
-        # Validar quantidade disponível
-        if quantidade_desejada > quantidade_atual:
-            return jsonify({"error": "Quantidade solicitada excede o estoque disponível"}), 400
+                if not nome_produto or not descricao or quantidade_atual is None or preco is None:
+                    self.send_response(400)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Dados do produto estão incompletos"}).encode())
+                    return
 
-        # Atualizar o estoque no outro banco
-        nova_quantidade = quantidade_atual - quantidade_desejada
-        estoque_atualizado = atualizar_estoque_no_outro_banco(
-            id_produto, nova_quantidade, nome_produto, descricao, preco
-        )
-        if not estoque_atualizado:
-            return jsonify({"error": "Erro ao atualizar o estoque no outro banco"}), 500
+                # Validar quantidade disponível
+                if quantidade_desejada > quantidade_atual:
+                    self.send_response(400)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Quantidade solicitada excede o estoque disponível"}).encode())
+                    return
 
-        # Registrar a venda no banco de vendas
-        venda_id = registrar_venda_no_banco(nome_func, nome_produto, quantidade_desejada, preco)
+                # Atualizar o estoque no outro banco
+                nova_quantidade = quantidade_atual - quantidade_desejada
+                estoque_atualizado = atualizar_estoque_no_outro_banco(
+                    id_produto, nova_quantidade, nome_produto, descricao, preco
+                )
+                if not estoque_atualizado:
+                    self.send_response(500)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Erro ao atualizar o estoque no outro banco"}).encode())
+                    return
 
-        # Retornar sucesso
-        return jsonify({
-            "message": "Venda registrada com sucesso",
-            "venda_id": venda_id,
-            "produto": {
-                "nome": nome_produto,
-                "descricao": descricao,
-                "quantidade_vendida": quantidade_desejada,
-                "preco": preco
-            }
-        }), 200
+                # Registrar a venda no banco de vendas
+                venda_id = registrar_venda_no_banco(nome_func, nome_produto, quantidade_desejada, preco)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+                # Retornar sucesso
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "message": "Venda registrada com sucesso",
+                    "venda_id": venda_id,
+                    "produto": {
+                        "nome": nome_produto,
+                        "descricao": descricao,
+                        "quantidade_vendida": quantidade_desejada,
+                        "preco": preco
+                    }
+                }).encode())
+
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+
+
+# Função para rodar o servidor
+def run(server_class=HTTPServer, handler_class=RequestHandler, port=36175):
+    server_address = ("", port)
+    httpd = server_class(server_address, handler_class)
+    print(f"Server running on port {port}...")
+    httpd.serve_forever()
+
 
 if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="junction.proxy.rlwy.net", port=36175)
+    run(port=36175)
