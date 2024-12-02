@@ -18,3 +18,4 @@ nome: Vendas
 hostname: junction.proxy.rlwy.net    port: 36175
 password: NCoLDllvIWKKtnZEzZrwzXohnCNJDguK
 
+projetosav3-production-03de.up.railway.app
